@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Codevragen Swipe</title>
+  <style>
+    :root {
+      --text: #f9f8ff;
+      --good: #22c55e;
+      --bad: #ff4d6d;
+      --radius: 30px;
+      --card-size: min(84vw, 370px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 14%, rgba(255, 59, 48, 0.24), transparent 18%),
+        radial-gradient(circle at 85% 18%, rgba(0, 122, 255, 0.22), transparent 18%),
+        radial-gradient(circle at 50% 85%, rgba(255, 204, 0, 0.18), transparent 20%),
+        #0c0c14;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 26px 26px;
+      opacity: 0.35;
+    }
+
+    .wrap {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(14px, env(safe-area-inset-top)) 0 max(18px, env(safe-area-inset-bottom));
+    }
+
+    .swipe-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      padding: 6px 12px 6px;
+    }
+
+    .swipe-wrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    .track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      padding-right: 12px;
+    }
+
+    .card {
+      width: var(--card-size);
+      height: var(--card-size);
+      border-radius: var(--radius);
+      border: 4px solid #ffffff;
+      background: #ff3b30;
+      box-shadow: 0 18px 0 rgba(255,255,255,0.95), 0 26px 50px rgba(0,0,0,0.38);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-snap-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: auto -20% -42% auto;
+      width: 72%;
+      height: 72%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      pointer-events: none;
+    }
+
+    .card.good {
+      background: #22c55e;
+      border-color: #ffffff;
+      box-shadow: 0 18px 0 rgba(255,255,255,0.95), 0 26px 50px rgba(10,85,39,0.36);
+    }
+
+    .card.bad {
+      background: #111111;
+      border-color: #ff4d6d;
+      box-shadow: 0 18px 0 rgba(255,77,109,0.95), 0 26px 50px rgba(0,0,0,0.5);
+    }
+
+    .card.shake {
+      animation: shake 0.45s ease;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0) rotate(0deg); }
+      20% { transform: translateX(-10px) rotate(-1deg); }
+      40% { transform: translateX(10px) rotate(1deg); }
+      60% { transform: translateX(-8px) rotate(-1deg); }
+      80% { transform: translateX(8px) rotate(1deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .number {
+      width: 58px;
+      height: 58px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 1.14rem;
+      background: #ffffff;
+      color: #111111;
+      border: 4px solid #111111;
+      box-shadow: 0 6px 0 rgba(17,17,17,0.9);
+      flex: 0 0 auto;
+    }
+
+    .status {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: transparent;
+      text-align: right;
+      line-height: 1.15;
+      min-width: 42px;
+    }
+
+    .question {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(1.02rem, 3.9vw, 1.14rem);
+      font-weight: 900;
+      line-height: 1.32;
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      color: #ffffff;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.18);
+    }
+
+    .input-wrap {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .answer {
+      width: 100%;
+      border: 4px solid #111111;
+      background: #ffffff;
+      color: #111111;
+      border-radius: 20px;
+      padding: 15px 16px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      outline: none;
+      box-shadow: 0 6px 0 rgba(17,17,17,0.9);
+    }
+
+    .answer:focus {
+      border-color: #0057ff;
+      box-shadow: 0 0 0 4px rgba(0,87,255,0.18), 0 6px 0 rgba(17,17,17,0.9);
+    }
+
+    .check {
+      border: 4px solid #111111;
+      border-radius: 20px;
+      min-height: 56px;
+      font-size: 1rem;
+      font-weight: 900;
+      color: #111111;
+      background: #ffcc00;
+      box-shadow: 0 6px 0 rgba(17,17,17,0.9);
+    }
+
+    .sum-card {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: #0057ff;
+      border-color: #ffffff;
+    }
+
+    .sum-card .big {
+      font-size: clamp(1.8rem, 6vw, 2.5rem);
+      font-weight: 900;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      position: relative;
+      z-index: 1;
+      color: #ffffff;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.18);
+    }
+
+    @media (min-width: 800px) {
+      :root { --card-size: 360px; }
+      .swipe-wrap { padding-left: 20px; padding-right: 20px; }
+      .track { padding-left: calc((100vw - var(--card-size)) / 2 - 20px); }
+    }
+
+    @media (max-width: 420px) {
+      :root { --card-size: 84vw; }
+      .card { padding: 16px; }
+      .question { font-size: 0.99rem; }
+      .number { width: 54px; height: 54px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="swipe-wrap" id="swipeWrap">
+      <div class="track" id="track"></div>
+    </section>
+  </div>
+
+  <script>
+    const questions = [
+      { answer: "7", text: "Hoeveel km is het fietsen vanuit jullie huis naar het Maerlant? Rond af op een heel getal." },
+      { answer: "144", text: "Hoeveel maanden is Fedde vandaag geworden?" },
+      { answer: "5", text: "In welke plaats is jullie moeder geboren? 3e cijfer van de postcode." },
+      { answer: "23", text: "Op welk nummer woonden jullie aan de Bilderdijkstraat?" },
+      { answer: "66", text: "Hoeveel jaar is opa?" },
+      { answer: "47", text: "Welk cijfer moet de volgende zijn in de reeks: 2, 5, 11, 23, ... ?" },
+      { answer: "12", text: "De overkapping van opa en oma is 4 bij 3 meter. Op welke oppervlakte kunnen we lekker zitten?" },
+      { answer: "55", text: "Over hoeveel nachten is Abel jarig?" },
+      { answer: "5", text: "Hoeveel eieren gebruik je als je een lekkere grote cake bakt?" },
+      { answer: "123", text: "Tel de breedte van een officieel UEFA Champions League-voetbalveld bij de breedte van een officieel hockeyveld op." }
+    ];
+
+    const track = document.getElementById('track');
+
+    function renderCards() {
+      const html = questions.map((q, index) => `
+        <article class="card" data-index="${index}" aria-label="Vraag ${index + 1}">
+          <div class="card-head">
+            <div class="number">${index + 1}</div>
+            <div class="status" id="status-${index}"></div>
+          </div>
+
+          <div class="question">${q.text}</div>
+
+          <div class="input-wrap">
+            <input
+              class="answer"
+              inputmode="numeric"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="Typ je antwoord"
+              aria-label="Antwoord vraag ${index + 1}"
+              data-input="${index}"
+            />
+            <button class="check" data-check="${index}">Check</button>
+          </div>
+        </article>
+      `).join('');
+
+      const sumCard = `
+        <article class="card sum-card" aria-label="Laatste kaart">
+          <div class="big">Tel alle antwoorden<br>bij elkaar op</div>
+        </article>
+      `;
+
+      track.innerHTML = html + sumCard;
+    }
+
+    function setStatus(index, ok) {
+      const card = document.querySelector(`.card[data-index="${index}"]`);
+      const status = document.getElementById(`status-${index}`);
+      card.classList.remove('good', 'bad', 'shake');
+      void card.offsetWidth;
+      card.classList.add(ok ? 'good' : 'bad');
+      if (!ok) card.classList.add('shake');
+      status.textContent = ok ? 'goed' : 'fout';
+      status.style.color = 'rgba(249,248,255,0.95)';
+    }
+
+    function checkAnswer(index) {
+      const field = document.querySelector(`input[data-input="${index}"]`);
+      const userAnswer = field.value.trim().replace(',', '.');
+      const ok = userAnswer === questions[index].answer;
+      setStatus(index, ok);
+    }
+
+    renderCards();
+
+    track.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-check]');
+      if (!btn) return;
+      checkAnswer(Number(btn.dataset.check));
+    });
+
+    track.addEventListener('keydown', (event) => {
+      const input = event.target.closest('input[data-input]');
+      if (!input || event.key !== 'Enter') return;
+      checkAnswer(Number(input.dataset.input));
+    });
+  </script>
+</body>
+</html>
